@@ -49,7 +49,11 @@ func markupFromTree(tree dir, indent int) (ret string) {
 		ret = m(indent) + "<ol>\n" + m(indent + 1) + "<li>"
 	}
 	id := strings.Replace(tree.path, "/", "_", -1)
-	ret += fmt.Sprintf(`<label for="%s">%s</label> <input type="checkbox" id="%s">`, id, name, id) + "\n"
+	if name == "/" {
+		ret += fmt.Sprintf(`<label for="root">%s</label> <input type="checkbox" checked="checked" id="root">`, name) + "\n"
+	} else {
+		ret += fmt.Sprintf(`<label for="%s">%s</label> <input type="checkbox" id="%s">`, id, name, id) + "\n"
+	}
 
 	ret += m(indent + 2) + "<ol>\n"
 	if len(tree.subdirs) > 0 {
