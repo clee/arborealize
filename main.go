@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"github.com/kr/pretty"
 )
 
 type dir struct {
@@ -19,7 +20,6 @@ type dir struct {
 const htmlHeader = `<html>
 <head>
 <title>%s</title>
-<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css"/>
 <link rel="stylesheet" href="//clee.github.io/arborealize/arborealize.css"/>
 </style>
 <body>
@@ -43,59 +43,67 @@ func m(indent int) string {
 func markupFromTree(tree dir, indent int) (ret string) {
 	name := tree.name
 	if tree.name == "" {
-		ret = m(indent) + "<ol class=\"tree\">\n<li>\n"
+		ret = m(indent) + "<ol class=\"tree\">\n" + m(indent + 1) + "<li>"
 		name = "/"
 	} else {
-		ret = m(indent) + "<ol>\n<li>\n"
+		ret = m(indent) + "<ol>\n" + m(indent + 1) + "<li>"
 	}
 	id := strings.Replace(tree.path, "/", "_", -1)
-	ret += m(indent + 1) + fmt.Sprintf(`<label for="%s">%s</label> <input type="checkbox" id="%s" />`, id, name, id)
+	ret += fmt.Sprintf(`<label for="%s">%s</label> <input type="checkbox" id="%s">`, id, name, id) + "\n"
+
+	ret += m(indent + 2) + "<ol>\n"
 	if len(tree.subdirs) > 0 {
 		for _, s := range tree.subdirs {
-			ret += markupFromTree(s, indent + 1)
+			ret += m(indent + 4) + "<li>\n" + markupFromTree(s, indent + 5) + m(indent + 4) + "</li>\n"
 		}
 	}
+
 	if len(tree.files) > 0 {
-		ret += m(indent + 1) + "<ol>\n"
 		for _, f := range tree.files {
-			ret += m(indent + 2) + fmt.Sprintf("<li class=\"file\"><a href=\"%s%s\">%s</a></li>\n", tree.path, f, f)
+			ret += m(indent + 3) + fmt.Sprintf(`<li class="file"><a href="%s%s">%s</a></li>`, tree.path, f, f) + "\n"
 		}
-		ret += m(indent + 1) + "</ol>\n"
 	}
-	ret += m(indent) + "</li>\n</ol>\n"
-	return
+	ret += m(indent + 2) + "</ol>\n"
+
+	ret += m(indent + 1) + "</li>\n" + m(indent) + "</ol>\n"
+	return ret
 }
 
-func treeFromFiles(files map[string][]string) (dir, error) {
+func treeFromFiles(files map[string][]string) dir {
 	root := dir{name: "", files: files[""], subdirs: []dir{}}
 	keys := make([]string, len(files))
+	sort.Strings(keys)
 	for key, _ := range files {
 		keys = append(keys, key)
 	}
-	sort.Strings(keys)
 
-	for _, key := range keys {
+	for key := range files {
 		var currentDir *dir = &root
 		var newDir *dir
 		subdirNames := strings.Split(key, "/")
 		for i, d := range subdirNames {
 			// Skip empty post-trailing-/ string
-			if i == len(subdirNames) -1 {
+			if i == len(subdirNames) - 1 {
 				continue
 			}
-			if j := subdirIndex(currentDir.subdirs, d); j == -1 {
+			path := strings.Join(subdirNames[0:i+1], "/") + "/"
+			j := subdirIndex(currentDir.subdirs, d)
+			if j == -1 {
+				fmt.Printf("<!-- adding subdir '%s' to dir '%s' -->\n", d, currentDir.name)
 				newDir = new(dir)
 				newDir.name = d
-				newDir.path = strings.Join(subdirNames[0:i+1], "/") + "/"
-				newDir.files = files[newDir.path]
+				newDir.path = path
+				newDir.files = files[path]
 				currentDir.subdirs = append(currentDir.subdirs, (*newDir))
 			} else {
+				fmt.Printf("<!-- choosing subdir '%s' from '%s' -->\n", currentDir.subdirs[j].name, currentDir.name)
 				newDir = &currentDir.subdirs[j]
 			}
 			currentDir = newDir
 		}
 	}
-	return root, nil
+	fmt.Printf("<!--\nfiles: %# v\ntree: %# v\n//-->\n", pretty.Formatter(files), pretty.Formatter(root))
+	return root
 }
 
 func main() {
@@ -126,7 +134,7 @@ func main() {
 		return nil
 	})
 
-	f, err := treeFromFiles(files)
+	f := treeFromFiles(files)
 	html := fmt.Sprintf(htmlHeader, root)
 	html += markupFromTree(f, 1)
 	html += htmlFooter
