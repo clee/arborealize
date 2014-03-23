@@ -19,18 +19,8 @@ type dir struct {
 const htmlHeader = `<html>
 <head>
 <title>%s</title>
-<style type="text/css">
-ol.tree { padding: 0 0 0 30px; width: 300px; }
-li { position: relative; margin-left: -15px; list-style: none; }
-li.file { margin-left: -1px !important; }
-li.file a { background: url(document.png) 0 0 no-repeat; color: #fff; padding-left: 21px; text-decoration: none; display: block; }
-li input { position: absolute; left: 0; margin-left: 0; opacity: 0; z-index: 2; cursor: pointer; height: 1em; width: 1em; top: 0; }
-li input + ol { background: url(toggle-small-expand.png) 40px 0 no-repeat; margin: -0.938em 0 0 -44px; /* 15px */ height: 1em; }
-li input + ol > li { display: none; margin-left: -14px !important; padding-left: 1px; }
-li label { background: url(folder-horizontal.png) 15px 1px no-repeat; cursor: pointer; display: block; padding-left: 37px; }
-li input:checked + ol { background: url(toggle-small.png) 40px 5px no-repeat; margin: -1.25em 0 0 -44px; padding: 1.563em 0 0 80px; height: auto; }
-li input:checked + ol > li { display: block; margin: 0 0 0.125em; }
-li input:checked + ol > li:last-child { margin: 0 0 0.063em; }
+<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css"/>
+<link rel="stylesheet" href="//clee.github.io/arborealize/arborealize.css"/>
 </style>
 <body>
 `
@@ -46,28 +36,33 @@ func subdirIndex(subdirs []dir, name string) int {
 	return -1
 }
 
-func markupFromTree(tree dir) (ret string) {
+func m(indent int) string {
+	return strings.Repeat(" ", indent)
+}
+
+func markupFromTree(tree dir, indent int) (ret string) {
 	name := tree.name
 	if tree.name == "" {
-		ret = "<ol class=\"tree\">\n<li>\n"
+		ret = m(indent) + "<ol class=\"tree\">\n<li>\n"
 		name = "/"
 	} else {
-		ret = "<ol>\n<li>\n"
+		ret = m(indent) + "<ol>\n<li>\n"
 	}
-	ret += fmt.Sprintf("<label for=\"%s\">%s</label>\n", name, name)
+	id := strings.Replace(tree.path, "/", "_", -1)
+	ret += m(indent + 1) + fmt.Sprintf(`<label for="%s">%s</label> <input type="checkbox" id="%s" />`, id, name, id)
 	if len(tree.subdirs) > 0 {
 		for _, s := range tree.subdirs {
-			ret += markupFromTree(s)
+			ret += markupFromTree(s, indent + 1)
 		}
 	}
 	if len(tree.files) > 0 {
-		ret += "<ol>\n"
+		ret += m(indent + 1) + "<ol>\n"
 		for _, f := range tree.files {
-			ret += fmt.Sprintf("<li class=\"file\"><a href=\"%s%s\">%s</a></li>\n", tree.path, f, f)
+			ret += m(indent + 2) + fmt.Sprintf("<li class=\"file\"><a href=\"%s%s\">%s</a></li>\n", tree.path, f, f)
 		}
-		ret += "</ol>\n"
+		ret += m(indent + 1) + "</ol>\n"
 	}
-	ret += "</li>\n</ol>\n"
+	ret += m(indent) + "</li>\n</ol>\n"
 	return
 }
 
@@ -133,7 +128,7 @@ func main() {
 
 	f, err := treeFromFiles(files)
 	html := fmt.Sprintf(htmlHeader, root)
-	html += markupFromTree(f)
+	html += markupFromTree(f, 1)
 	html += htmlFooter
 	fmt.Printf("%s\n", html)
 }
