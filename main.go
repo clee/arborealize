@@ -5,9 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
-	"github.com/kr/pretty"
 )
 
 type dir struct {
@@ -75,11 +73,6 @@ func markupFromTree(tree dir, indent int) (ret string) {
 
 func treeFromFiles(files map[string][]string) dir {
 	root := dir{name: "", files: files[""], subdirs: []dir{}}
-	keys := make([]string, len(files))
-	sort.Strings(keys)
-	for key, _ := range files {
-		keys = append(keys, key)
-	}
 
 	for key := range files {
 		var currentDir *dir = &root
