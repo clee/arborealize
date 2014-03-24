@@ -93,20 +93,18 @@ func treeFromFiles(files map[string][]string) dir {
 			path := strings.Join(subdirNames[0:i+1], "/") + "/"
 			j := subdirIndex(currentDir.subdirs, d)
 			if j == -1 {
-				fmt.Printf("<!-- adding subdir '%s' to dir '%s' -->\n", d, currentDir.name)
 				newDir = new(dir)
 				newDir.name = d
 				newDir.path = path
 				newDir.files = files[path]
+				newDir.subdirs = []dir{}
+
 				currentDir.subdirs = append(currentDir.subdirs, (*newDir))
-			} else {
-				fmt.Printf("<!-- choosing subdir '%s' from '%s' -->\n", currentDir.subdirs[j].name, currentDir.name)
-				newDir = &currentDir.subdirs[j]
+				j = subdirIndex(currentDir.subdirs, d)
 			}
-			currentDir = newDir
+			currentDir = &currentDir.subdirs[j]
 		}
 	}
-	fmt.Printf("<!--\nfiles: %# v\ntree: %# v\n//-->\n", pretty.Formatter(files), pretty.Formatter(root))
 	return root
 }
 
