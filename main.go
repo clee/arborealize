@@ -55,17 +55,15 @@ func markupFromTree(tree dir, indent int) (ret string) {
 	}
 
 	ret += m(indent + 2) + "<ol>\n"
-	if len(tree.subdirs) > 0 {
-		for _, s := range tree.subdirs {
-			ret += m(indent + 4) + "<li>\n" + markupFromTree(s, indent + 5) + m(indent + 4) + "</li>\n"
-		}
+
+	for _, s := range tree.subdirs {
+		ret += m(indent + 3) + "<li>\n" + markupFromTree(s, indent + 4) + m(indent + 3) + "</li>\n"
 	}
 
-	if len(tree.files) > 0 {
-		for _, f := range tree.files {
-			ret += m(indent + 3) + fmt.Sprintf(`<li class="file"><a href="%s%s">%s</a></li>`, tree.path, f, f) + "\n"
-		}
+	for _, f := range tree.files {
+		ret += m(indent + 3) + fmt.Sprintf(`<li class="file"><a href="%s%s">%s</a></li>`, tree.path, f, f) + "\n"
 	}
+
 	ret += m(indent + 2) + "</ol>\n"
 
 	ret += m(indent + 1) + "</li>\n" + m(indent) + "</ol>\n"
