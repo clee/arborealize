@@ -18,8 +18,9 @@ type dir struct {
 const htmlHeader = `<html>
 <head>
 <title>%s</title>
-<link rel="stylesheet" href="//clee.github.io/arborealize/arborealize.css"/>
-</style>
+<link rel="stylesheet" href="//clee.github.io/arborealize/arborealize.css" />
+<meta name="generator" content="http://github.com/clee/arborealize/" />
+</head>
 <body>
 `
 const htmlFooter = `</body>
