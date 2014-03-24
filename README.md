@@ -15,3 +15,7 @@ This will take the recursive contents of the current directory and generate an i
 ## example
 
 You can see some example output at http://clee.github.io/arborealize/ :)
+
+## credits
+
+The CSS and HTML structure for the output is inspired by (and based on) [code from the CSS Ninja](http://www.thecssninja.com/css/css-tree-menu).
