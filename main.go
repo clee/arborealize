@@ -11,7 +11,7 @@ import (
 type dir struct {
 	name string
 	path string
-	files []string
+	files []os.FileInfo
 	subdirs []dir
 }
 
@@ -39,6 +39,17 @@ func m(indent int) string {
 	return strings.Repeat(" ", indent)
 }
 
+func human(size int64 ) string {
+	suffixes := []string{"bytes", "KB", "MB", "GB", "TB", "PB"}
+	suffixIndex := 0
+
+	for size > 1024 {
+		size >>= 10
+		suffixIndex += 1
+	}
+	return fmt.Sprintf("%d %s", size, suffixes[suffixIndex])
+}
+
 func markupFromTree(tree dir, indent int) (ret string) {
 	name := tree.name
 	if tree.name == "" {
@@ -61,7 +72,7 @@ func markupFromTree(tree dir, indent int) (ret string) {
 	}
 
 	for _, f := range tree.files {
-		ret += m(indent + 3) + fmt.Sprintf(`<li class="file"><a href="%s%s">%s</a></li>`, tree.path, f, f) + "\n"
+		ret += m(indent + 3) + fmt.Sprintf(`<li class="file"><a href="%s%s">%s</a> <span class="filesize">%s</span></li>`, tree.path, f.Name(), f.Name(), human(f.Size())) + "\n"
 	}
 
 	ret += m(indent + 2) + "</ol>\n"
@@ -70,7 +81,7 @@ func markupFromTree(tree dir, indent int) (ret string) {
 	return ret
 }
 
-func treeFromFiles(files map[string][]string) dir {
+func treeFromFiles(files map[string][]os.FileInfo) dir {
 	root := dir{name: "", files: files[""], subdirs: []dir{}}
 
 	for key := range files {
@@ -103,7 +114,7 @@ func treeFromFiles(files map[string][]string) dir {
 func main() {
 	var root string
 	var err error
-	files := make(map[string][]string)
+	files := make(map[string][]os.FileInfo)
 
 	if root, err = os.Getwd(); err != nil {
 		fmt.Printf("can't get the current path\n")
@@ -123,7 +134,7 @@ func main() {
 		path = strings.TrimPrefix(path, root)
 		dir := strings.TrimSuffix(path, f.Name())
 		if f.Mode().IsRegular() {
-			files[dir] = append(files[dir], f.Name())
+			files[dir] = append(files[dir], f)
 		}
 		return nil
 	})
