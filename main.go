@@ -72,7 +72,7 @@ func markupFromTree(tree dir, indent int) (ret string) {
 	}
 
 	for _, f := range tree.files {
-		ret += m(indent + 3) + fmt.Sprintf(`<li class="file"><a href="%s%s">%s</a> <span class="filesize">%s</span></li>`, tree.path, f.Name(), f.Name(), human(f.Size())) + "\n"
+		ret += m(indent + 3) + fmt.Sprintf(`<li class="file"><a href="%s%s">%s <span class="filesize">%s</span></a></li>`, tree.path, f.Name(), f.Name(), human(f.Size())) + "\n"
 	}
 
 	ret += m(indent + 2) + "</ol>\n"
