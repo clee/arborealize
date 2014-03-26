@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 )
 
@@ -14,6 +15,16 @@ type dir struct {
 	files []os.FileInfo
 	subdirs []dir
 }
+
+type ByDirName []dir
+func (d ByDirName) Len() int { return len(d) }
+func (d ByDirName) Swap(i, j int) { d[i], d[j] = d[j], d[i] }
+func (d ByDirName) Less(i, j int) bool { return d[i].name < d[j].name }
+
+type ByFileName []os.FileInfo
+func (f ByFileName) Len() int { return len(f) }
+func (f ByFileName) Swap(i, j int) { f[i], f[j] = f[j], f[i] }
+func (f ByFileName) Less(i, j int) bool { return f[i].Name() < f[j].Name() }
 
 const htmlHeader = `<html>
 <head>
@@ -67,10 +78,12 @@ func markupFromTree(tree dir, indent int) (ret string) {
 
 	ret += m(indent + 2) + "<ol>\n"
 
+	sort.Sort(ByDirName(tree.subdirs))
 	for _, s := range tree.subdirs {
 		ret += m(indent + 3) + "<li>\n" + markupFromTree(s, indent + 4) + m(indent + 3) + "</li>\n"
 	}
 
+	sort.Sort(ByFileName(tree.files))
 	for _, f := range tree.files {
 		ret += m(indent + 3) + fmt.Sprintf(`<li class="file"><a href="%s%s">%s <span class="filesize">%s</span></a></li>`, tree.path, f.Name(), f.Name(), human(f.Size())) + "\n"
 	}
