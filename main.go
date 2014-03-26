@@ -1,18 +1,20 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+	"text/template"
 )
 
 type dir struct {
-	name string
-	path string
-	files []os.FileInfo
-	subdirs []dir
+	Name string
+	Path string
+	Files []os.FileInfo
+	Subdirs []dir
 }
 
 const htmlHeader = `<html>
@@ -28,7 +30,7 @@ const htmlFooter = `</body>
 
 func subdirIndex(subdirs []dir, name string) int {
 	for i, d := range subdirs {
-		if d.name == name {
+		if d.Name == name {
 			return i
 		}
 	}
@@ -51,14 +53,14 @@ func human(size int64 ) string {
 }
 
 func markupFromTree(tree dir, indent int) (ret string) {
-	name := tree.name
-	if tree.name == "" {
+	name := tree.Name
+	if tree.Name == "" {
 		ret = m(indent) + "<ol class=\"tree\">\n" + m(indent + 1) + "<li>"
 		name = "/"
 	} else {
 		ret = m(indent) + "<ol>\n" + m(indent + 1) + "<li>"
 	}
-	id := strings.Replace(tree.path, "/", "_", -1)
+	id := strings.Replace(tree.Path, "/", "_", -1)
 	if name == "/" {
 		ret += fmt.Sprintf(`<input type="checkbox" checked="checked" id="root"><label for="root">%s</label>`, name) + "\n"
 	} else {
@@ -67,12 +69,12 @@ func markupFromTree(tree dir, indent int) (ret string) {
 
 	ret += m(indent + 2) + "<ol>\n"
 
-	for _, s := range tree.subdirs {
+	for _, s := range tree.Subdirs {
 		ret += m(indent + 3) + "<li>\n" + markupFromTree(s, indent + 4) + m(indent + 3) + "</li>\n"
 	}
 
-	for _, f := range tree.files {
-		ret += m(indent + 3) + fmt.Sprintf(`<li class="file"><a href="%s%s">%s <span class="filesize">%s</span></a></li>`, tree.path, f.Name(), f.Name(), human(f.Size())) + "\n"
+	for _, f := range tree.Files {
+		ret += m(indent + 3) + fmt.Sprintf(`<li class="file"><a href="%s%s">%s <span class="filesize">%s</span></a></li>`, tree.Path, f.Name(), f.Name(), human(f.Size())) + "\n"
 	}
 
 	ret += m(indent + 2) + "</ol>\n"
@@ -81,8 +83,37 @@ func markupFromTree(tree dir, indent int) (ret string) {
 	return ret
 }
 
+func markupTemplate(tree dir) string {
+	const treeTemplate = `{{if .Name}}
+<ol><li><input type="checkbox" id="{{html .Name}}"><label for="{{html .Name}}">{{.Name}}</label>
+{{else}}
+	<ol class="tree"><li><input type="checkbox" checked="checked" id="root"><label for="root">/</label>
+{{end}}
+<ol>
+{{range .Subdirs}}
+	{{markupTemplate .}}
+{{end}}
+{{with $self := .}}
+{{range .Files}}<li class="file"><a href="{{$self.Path}}{{.Name}}">{{.Name}} <span class="filesize">{{human .Size}}</span></a></li>
+{{end}}
+{{end}}
+</ol>
+</li>
+</ol>`
+
+	var doc bytes.Buffer
+	funcMap := template.FuncMap { "human": human, "markupTemplate": markupTemplate }
+	t := template.Must(template.New("tree template").Funcs(funcMap).Parse(treeTemplate))
+	if e := t.Execute(&doc, tree); e != nil {
+		fmt.Printf("what the shit")
+		panic(e)
+	}
+
+	return doc.String()
+}
+
 func treeFromFiles(files map[string][]os.FileInfo) dir {
-	root := dir{name: "", files: files[""], subdirs: []dir{}}
+	root := dir{Name: "", Files: files[""], Subdirs: []dir{}}
 
 	for key := range files {
 		var currentDir *dir = &root
@@ -94,18 +125,18 @@ func treeFromFiles(files map[string][]os.FileInfo) dir {
 				continue
 			}
 			path := strings.Join(subdirNames[0:i+1], "/") + "/"
-			j := subdirIndex(currentDir.subdirs, d)
+			j := subdirIndex(currentDir.Subdirs, d)
 			if j == -1 {
 				newDir = new(dir)
-				newDir.name = d
-				newDir.path = path
-				newDir.files = files[path]
-				newDir.subdirs = []dir{}
+				newDir.Name = d
+				newDir.Path = path
+				newDir.Files = files[path]
+				newDir.Subdirs = []dir{}
 
-				currentDir.subdirs = append(currentDir.subdirs, (*newDir))
-				j = subdirIndex(currentDir.subdirs, d)
+				currentDir.Subdirs = append(currentDir.Subdirs, (*newDir))
+				j = subdirIndex(currentDir.Subdirs, d)
 			}
-			currentDir = &currentDir.subdirs[j]
+			currentDir = &currentDir.Subdirs[j]
 		}
 	}
 	return root
@@ -141,7 +172,7 @@ func main() {
 
 	f := treeFromFiles(files)
 	html := fmt.Sprintf(htmlHeader, root)
-	html += markupFromTree(f, 1)
+	html += markupTemplate(f)
 	html += htmlFooter
 	fmt.Printf("%s\n", html)
 }
