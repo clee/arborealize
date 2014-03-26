@@ -4,11 +4,11 @@ html { font-size: 100%; /* IE hack */ }
 body { font-size: 1em; /* Sets base font size to 16px */ }
 table { font-size: 100%; /* IE hack */ }
 input, select, textarea, th, td { font-size: 1em; }
-body { background-color: #dfdfdf; margin: 0 0; }
+body { background-color: #ddd; margin: 0 0; }
 img { border: none; }
 p { font-size: 1em; margin: 0 0 1em 0; }
 input, select, textarea, th, td { font-size: 1em; }
-ol.tree { padding: 0 0 0 60px; width: 100%; }
+ol.tree { position: absolute; top: 30px; left: 30px; right: 30px; }
 
 li { position: relative; margin-left: -15px; list-style: none; }
 li.file { margin-left: 0px !important; }
