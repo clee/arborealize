@@ -64,33 +64,32 @@ func human(size int64 ) string {
 func markupFromTree(tree dir, indent int) (ret string) {
 	name := tree.name
 	if tree.name == "" {
-		ret = m(indent) + "<ol class=\"tree\">\n" + m(indent + 1) + "<li>"
+		ret = m(indent) + "<ol class=\"tree\">\n" + m(indent + 1) + "<li>\n"
 		name = "/"
-	} else {
-		ret = m(indent) + "<ol>\n" + m(indent + 1) + "<li>"
 	}
 	id := strings.Replace(tree.path, "/", "_", -1)
 	if name == "/" {
-		ret += fmt.Sprintf(`<input type="checkbox" checked="checked" id="root"><label for="root">%s</label>`, name) + "\n"
+		ret += m(indent + 2) + `<input type="checkbox" checked="checked" id="root"><label for="root">/</label>`
 	} else {
-		ret += fmt.Sprintf(`<input type="checkbox" id="%s"><label for="%s">%s</label>`, id, id, name) + "\n"
+		ret += m(indent + 2) + `<input type="checkbox" id="` + id + `"><label for="` + id + `">` + name + `</label>`
 	}
 
-	ret += m(indent + 2) + "<ol>\n"
+	ret += "\n" + m(indent + 2) + "<ol>\n"
 
 	sort.Sort(ByDirName(tree.subdirs))
 	for _, s := range tree.subdirs {
-		ret += m(indent + 3) + "<li>\n" + markupFromTree(s, indent + 4) + m(indent + 3) + "</li>\n"
+		ret += m(indent + 3) + "<li>\n" + markupFromTree(s, indent + 2) + m(indent + 3) + "</li>\n"
 	}
 
 	sort.Sort(ByFileName(tree.files))
 	for _, f := range tree.files {
-		ret += m(indent + 3) + fmt.Sprintf(`<li class="file"><a href="%s%s">%s <span class="filesize">%s</span></a></li>`, tree.path, f.Name(), f.Name(), human(f.Size())) + "\n"
+		ret += m(indent + 3) + `<li class="file"><a href="` + tree.path + f.Name() + `">` + f.Name() + ` <span class="filesize">` + human(f.Size()) + `</span></a></li>`
 	}
+	ret += "\n" + m(indent + 2) + "</ol>\n"
 
-	ret += m(indent + 2) + "</ol>\n"
-
-	ret += m(indent + 1) + "</li>\n" + m(indent) + "</ol>\n"
+	if name == "/" {
+		ret += m(indent + 1) + "</li>\n" + m(indent) + "</ol>\n"
+	}
 	return ret
 }
 
