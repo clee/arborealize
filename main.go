@@ -61,36 +61,38 @@ func human(size int64 ) string {
 	return fmt.Sprintf("%d %s", size, suffixes[suffixIndex])
 }
 
-func markupFromTree(tree dir, indent int) (ret string) {
+func markupFromTree(tree dir, indent int) {
 	name := tree.name
 	if tree.name == "" {
-		ret = m(indent) + "<ol class=\"tree\">\n" + m(indent + 1) + "<li>\n"
+		fmt.Printf(m(indent) + "<ol class=\"tree\">\n" + m(indent + 1) + "<li>\n")
 		name = "/"
 	}
 	id := strings.Replace(tree.path, "/", "_", -1)
 	if name == "/" {
-		ret += m(indent + 2) + `<input type="checkbox" checked="checked" id="root"><label for="root">/</label>`
+		fmt.Printf(m(indent + 2) + `<input type="checkbox" checked="checked" id="root"><label for="root">/</label>`)
 	} else {
-		ret += m(indent + 2) + `<input type="checkbox" id="` + id + `"><label for="` + id + `">` + name + `</label>`
+		fmt.Printf(m(indent + 2) + `<input type="checkbox" id="` + id + `"><label for="` + id + `">` + name + `</label>`)
 	}
 
-	ret += "\n" + m(indent + 2) + "<ol>\n"
+	fmt.Printf("\n" + m(indent + 2) + "<ol>\n")
 
 	sort.Sort(ByDirName(tree.subdirs))
 	for _, s := range tree.subdirs {
-		ret += m(indent + 3) + "<li>\n" + markupFromTree(s, indent + 2) + m(indent + 3) + "</li>\n"
+		fmt.Printf(m(indent + 3) + "<li>\n")
+		markupFromTree(s, indent + 2)
+		fmt.Printf(m(indent + 3) + "</li>\n")
 	}
 
 	sort.Sort(ByFileName(tree.files))
 	for _, f := range tree.files {
-		ret += m(indent + 3) + `<li class="file"><a href="` + tree.path + f.Name() + `">` + f.Name() + ` <span class="filesize">` + human(f.Size()) + `</span></a></li>`
+		fmt.Printf(m(indent + 3) + `<li class="file"><a href="` + tree.path + f.Name() + `">` + f.Name() + ` <span class="filesize">` + human(f.Size()) + `</span></a></li>`)
 	}
-	ret += "\n" + m(indent + 2) + "</ol>\n"
+
+	fmt.Printf("\n" + m(indent + 2) + "</ol>\n")
 
 	if name == "/" {
-		ret += m(indent + 1) + "</li>\n" + m(indent) + "</ol>\n"
+		fmt.Printf(m(indent + 1) + "</li>\n" + m(indent) + "</ol>\n")
 	}
-	return ret
 }
 
 func treeFromFiles(files map[string][]os.FileInfo) dir {
@@ -152,8 +154,7 @@ func main() {
 	})
 
 	f := treeFromFiles(files)
-	html := fmt.Sprintf(htmlHeader, root)
-	html += markupFromTree(f, 1)
-	html += htmlFooter
-	fmt.Printf("%s\n", html)
+	fmt.Printf(htmlHeader, root)
+	markupFromTree(f, 1)
+	fmt.Printf(htmlFooter)
 }
