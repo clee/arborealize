@@ -96,18 +96,19 @@ func markupFromTree(tree dir, indent int) {
 }
 
 func treeFromFiles(files map[string][]os.FileInfo) dir {
+	ps := string(os.PathSeparator)
 	root := dir{name: "", files: files[""], subdirs: []dir{}}
 
 	for key := range files {
 		var currentDir *dir = &root
 		var newDir *dir
-		subdirNames := strings.Split(key, "/")
+		subdirNames := strings.Split(key, ps)
 		for i, d := range subdirNames {
 			// Skip empty post-trailing-/ string
 			if i == len(subdirNames) - 1 {
 				continue
 			}
-			path := strings.Join(subdirNames[0:i+1], "/") + "/"
+			path := strings.Join(subdirNames[0:i+1], ps) + ps
 			j := subdirIndex(currentDir.subdirs, d)
 			if j == -1 {
 				newDir = new(dir)
@@ -128,6 +129,7 @@ func treeFromFiles(files map[string][]os.FileInfo) dir {
 func main() {
 	var root string
 	var err error
+	ps := string(os.PathSeparator)
 	files := make(map[string][]os.FileInfo)
 
 	if root, err = os.Getwd(); err != nil {
@@ -137,8 +139,8 @@ func main() {
 
 	flag.StringVar(&root, "root", root, "filesystem root for scan")
 	flag.Parse()
-	if !strings.HasSuffix(root, "/") {
-		root = root + "/"
+	if !strings.HasSuffix(root, ps) {
+		root = root + ps
 	}
 
 	filepath.Walk(root, func(path string, f os.FileInfo, err error) error {
